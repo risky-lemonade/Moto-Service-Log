@@ -95,3 +95,23 @@ def list_service_logs(vehicle_id: int, db: Session = Depends(get_db), current_us
         raise HTTPException(status_code=404, detail="Vehicle not found")
 
     return db.query(ServiceLog).filter(ServiceLog.vehicle_id == vehicle.id).all()
+
+
+@app.put("/vehicles/{vehicle_id}", response_model=VehicleOut)
+def update_vehicle(vehicle_id: int, updated: VehicleCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id, Vehicle.owner_id == current_user.id).first()
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    vehicle.name = updated.name
+    db.commit()
+    db.refresh(vehicle)
+    return vehicle
+
+@app.delete("/vehicles/{vehicle_id}")
+def delete_vehicle(vehicle_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id, Vehicle.owner_id == current_user.id).first()
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    db.delete(vehicle)
+    db.commit()
+    return {"message": "Vehicle deleted"}
