@@ -35,6 +35,13 @@ class ServiceLogCreate(BaseModel):
     description: str
     cost: float
 
+class VehicleBasic(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
 class ServiceLogOut(BaseModel):
     id: int
     name: str
@@ -42,6 +49,7 @@ class ServiceLogOut(BaseModel):
     cost: float
     date: datetime
     vehicle_id: int
+    vehicle: VehicleBasic
 
     class Config:
         from_attributes = True

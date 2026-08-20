@@ -2,6 +2,7 @@ from typing import List
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from sqlalchemy import func 
 
 from database import engine, get_db
 from models import Base, User, Vehicle, ServiceLog
@@ -89,13 +90,13 @@ def create_service_log(vehicle_id: int, service: ServiceLogCreate, db: Session =
     return new_log
 
 @app.get("/vehicles/{vehicle_id}/services", response_model=List[ServiceLogOut])
-def list_service_logs(vehicle_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def list_service_logs(vehicle_id: int, page: int = 1, page_size: int = 10, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id, Vehicle.owner_id == current_user.id).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
 
-    return db.query(ServiceLog).filter(ServiceLog.vehicle_id == vehicle.id).all()
-
+    skip = (page - 1) * page_size
+    return db.query(ServiceLog).filter(ServiceLog.vehicle_id == vehicle.id).offset(skip).limit(page_size).all()
 
 @app.put("/vehicles/{vehicle_id}", response_model=VehicleOut)
 def update_vehicle(vehicle_id: int, updated: VehicleCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -115,3 +116,12 @@ def delete_vehicle(vehicle_id: int, db: Session = Depends(get_db), current_user:
     db.delete(vehicle)
     db.commit()
     return {"message": "Vehicle deleted"}
+
+@app.get("/vehicles/{vehicle_id}/total-cost")
+def get_total_cost(vehicle_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id, Vehicle.owner_id == current_user.id).first()
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+
+    total = db.query(func.sum(ServiceLog.cost)).filter(ServiceLog.vehicle_id == vehicle.id).scalar()
+    return {"vehicle_id": vehicle.id, "total_cost": total or 0}
