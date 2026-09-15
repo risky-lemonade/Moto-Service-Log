@@ -10,6 +10,8 @@ from schemas import UserCreate, UserOut, Token, VehicleCreate, VehicleOut, Servi
 from auth import hash_password, verify_password, create_access_token, get_current_user
 
 app = FastAPI()
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 Base.metadata.create_all(bind=engine)
 
 @app.get("/")
@@ -107,15 +109,6 @@ def update_vehicle(vehicle_id: int, updated: VehicleCreate, db: Session = Depend
     db.commit()
     db.refresh(vehicle)
     return vehicle
-
-@app.delete("/vehicles/{vehicle_id}")
-def delete_vehicle(vehicle_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id, Vehicle.owner_id == current_user.id).first()
-    if not vehicle:
-        raise HTTPException(status_code=404, detail="Vehicle not found")
-    db.delete(vehicle)
-    db.commit()
-    return {"message": "Vehicle deleted"}
 
 @app.get("/vehicles/{vehicle_id}/total-cost")
 def get_total_cost(vehicle_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

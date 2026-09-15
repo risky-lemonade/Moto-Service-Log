@@ -6,8 +6,4 @@ passlib==1.7.4
 bcrypt==4.0.1
 python-dotenv==1.2.2
 python-multipart==0.0.32
-<<<<<<< HEAD
 pydantic==2.13.4
-=======
-pydantic==2.13.4
->>>>>>> 30408922e80b4f9fc42e8faaabff52781ffb9732
